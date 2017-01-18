@@ -1,4 +1,6 @@
 #!/bin/bash
+# Modified by Arthur Mensch to recompute StandardCoordinates statistics
+
 set -e
 g_script_name=`basename ${0}`
 
@@ -12,10 +14,6 @@ show_tool_versions()
 	# Show HCP pipelines version
 	log_Msg "Showing HCP Pipelines version"
 	cat ${HCPPIPEDIR}/version.txt
-
-	# Show wb_command version
-	log_Msg "Showing Connectome Workbench (wb_command) version"
-	${CARET7DIR}/wb_command -version
 
 	# Show fsl version
 	log_Msg "Showing FSL version"
@@ -98,7 +96,7 @@ log_Msg "TemporalFilterString: ${TemporalFilterString}"
 
 LevelOneFEATDirSTRING=""
 i=1
-for LevelOnefMRIName in $LevelOnefMRINames ; do 
+for LevelOnefMRIName in $LevelOnefMRINames ; do
   LevelOnefsfName=`echo $LevelOnefsfNames | cut -d " " -f $i`
   LevelOneFEATDirSTRING="${LevelOneFEATDirSTRING}${ResultsFolder}/${LevelOnefMRIName}/${LevelOnefsfName}${TemporalFilterString}${SmoothingString}_level1${RegString}${ParcellationString}.feat "
   i=$(($i+1))
@@ -128,7 +126,7 @@ cd $DIR
 #Loop over Grayordinates and Standard Volume (if requested) Level 2 Analyses
 log_Msg "Loop over Grayordinates and Standard Volume (if requested) Level 2 Analyses"
 if [ ${VolumeBasedProcessing} = "YES" ] ; then
-  Analyses="GrayordinatesStats StandardVolumeStats"
+  Analyses="StandardVolumeStats"
 elif [ -z ${ParcellationString} ] ; then
   Analyses="GrayordinatesStats"
 else
@@ -139,7 +137,7 @@ log_Msg "Analyses: ${Analyses}"
 for Analysis in ${Analyses} ; do
   log_Msg "Analysis: ${Analysis}"
   mkdir -p ${LevelTwoFEATDir}/${Analysis}
-  
+
   #Copy over level one folders and convert CIFTI to NIFTI if required
   log_Msg "Copy over level one folders and convert CIFTI to NIFTI if required"
   if [ -e ${FirstFolder}/${Analysis}/cope1.nii.gz ] ; then
@@ -150,25 +148,10 @@ for Analysis in ${Analyses} ; do
       cp ${LevelOneFEATDir}/${Analysis}/* ${LevelTwoFEATDir}/${Analysis}/${i}
       i=$(($i+1))
     done
-  elif [ -e ${FirstFolder}/${Analysis}/cope1.${Extension} ] ; then
-    Grayordinates="YES"
-    i=1
-    for LevelOneFEATDir in ${LevelOneFEATDirSTRING} ; do
-      mkdir -p ${LevelTwoFEATDir}/${Analysis}/${i}
-      cp ${LevelOneFEATDir}/${Analysis}/* ${LevelTwoFEATDir}/${Analysis}/${i}
-      cd ${LevelTwoFEATDir}/${Analysis}/${i}
-      Files=`ls | grep .${Extension} | cut -d "." -f 1`
-      cd $DIR
-      for File in $Files ; do
-        ${CARET7DIR}/wb_command -cifti-convert -to-nifti ${LevelTwoFEATDir}/${Analysis}/${i}/${File}.${Extension} ${LevelTwoFEATDir}/${Analysis}/${i}/${File}.nii.gz
-        rm ${LevelTwoFEATDir}/${Analysis}/${i}/${File}.${Extension}
-      done
-      i=$(($i+1))
-    done
   else
     echo "Level One Folder Not Found"
   fi
-  
+
   #Create dof and Mask
   log_Msg "Create dof and Mask"
   MERGESTRING=""
@@ -181,7 +164,7 @@ for Analysis in ${Analyses} ; do
   done
   fslmerge -t ${LevelTwoFEATDir}/${Analysis}/dof.nii.gz $MERGESTRING
   fslmaths ${LevelTwoFEATDir}/${Analysis}/dof.nii.gz -Tmin -bin ${LevelTwoFEATDir}/${Analysis}/mask.nii.gz
-  
+
   #Merge COPES and VARCOPES and run 2nd level analysis
   log_Msg "Merge COPES and VARCOPES and run 2nd level analysis"
   log_Msg "NumContrasts: ${NumContrasts}"
@@ -209,67 +192,4 @@ for Analysis in ${Analyses} ; do
     rm -r ${LevelTwoFEATDir}/${Analysis}/${j}
     j=$(($j+1))
   done
-
-  #Convert Grayordinates NIFTI Files to CIFTI if necessary
-  log_Msg "Convert Grayordinates NIFTI Files to CIFTI if necessary"
-  if [ $Grayordinates = "YES" ] ; then
-    cd ${LevelTwoFEATDir}/${Analysis}
-    Files=`ls | grep .nii.gz | cut -d "." -f 1`
-    cd $DIR
-    for File in $Files ; do
-      ${CARET7DIR}/wb_command -cifti-convert -from-nifti ${LevelTwoFEATDir}/${Analysis}/${File}.nii.gz ${LevelOneFEATDir}/${Analysis}/pe1.${Extension} ${LevelTwoFEATDir}/${Analysis}/${File}.${Extension} -reset-timepoints 1 1 
-      rm ${LevelTwoFEATDir}/${Analysis}/${File}.nii.gz
-    done
-    i=1
-    while [ $i -le ${NumContrasts} ] ; do
-      cd ${LevelTwoFEATDir}/${Analysis}/cope${i}.feat
-      Files=`ls | grep .nii.gz | cut -d "." -f 1`
-      cd $DIR
-      for File in $Files ; do
-        ${CARET7DIR}/wb_command -cifti-convert -from-nifti ${LevelTwoFEATDir}/${Analysis}/cope${i}.feat/${File}.nii.gz ${LevelOneFEATDir}/${Analysis}/pe1.${Extension} ${LevelTwoFEATDir}/${Analysis}/cope${i}.feat/${File}.${Extension} -reset-timepoints 1 1 
-        rm ${LevelTwoFEATDir}/${Analysis}/cope${i}.feat/${File}.nii.gz
-      done
-      i=$(($i+1))
-    done        
-  fi
-done  
-
-#Generate Files for Viewing
-log_Msg "Generate Files for Viewing"
-i=1
-MergeSTRING=""
-if [ ${VolumeBasedProcessing} = "YES" ] ; then
-  VolMergeSTRING=""
-fi
-if [ -e ${LevelTwoFEATDir}/Contrasts.txt ] ; then
-  rm ${LevelTwoFEATDir}/Contrasts.txt
-fi
-while [ $i -le ${NumContrasts} ] ; do
-  Contrast=`echo $ContrastNames | cut -d " " -f $i`
-  echo "${Subject}_${LevelTwofsfName}_level2_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ParcellationString}" >> ${LevelTwoFEATDir}/Contrasttemp.txt
-  echo ${Contrast} >> ${LevelTwoFEATDir}/Contrasts.txt
-  ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Analysis}/cope${i}.feat/zstat1.${Extension} ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
-  ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Analysis}/cope${i}.feat/cope1.${Extension} ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_beta_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ParcellationString}.${ScalarExtension} -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
-  zMergeSTRING=`echo "${zMergeSTRING}-cifti ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ParcellationString}.${ScalarExtension} "`
-  bMergeSTRING=`echo "${bMergeSTRING}-cifti ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_beta_${Contrast}${TemporalFilterString}${SmoothingString}${RegString}${ParcellationString}.${ScalarExtension} "`
-
-  if [ ${VolumeBasedProcessing} = "YES" ] ; then
-    echo "OTHER" >> ${LevelTwoFEATDir}/wbtemp.txt
-    echo "1 255 255 255 255" >> ${LevelTwoFEATDir}/wbtemp.txt
-    ${CARET7DIR}/wb_command -volume-label-import ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz ${LevelTwoFEATDir}/wbtemp.txt ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz -discard-others -unlabeled-value 0
-    rm ${LevelTwoFEATDir}/wbtemp.txt
-    ${CARET7DIR}/wb_command -cifti-create-dense-timeseries ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2vol_${Contrast}${TemporalFilterString}${SmoothingString}.dtseries.nii -volume ${LevelTwoFEATDir}/StandardVolumeStats/cope${i}.feat/zstat1.nii.gz ${LevelTwoFEATDir}/StandardVolumeStats/mask.nii.gz -timestep 1 -timestart 1
-    ${CARET7DIR}/wb_command -cifti-convert-to-scalar ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2vol_${Contrast}${TemporalFilterString}${SmoothingString}.dtseries.nii ROW ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2vol_${Contrast}${TemporalFilterString}${SmoothingString}.dscalar.nii -name-file ${LevelTwoFEATDir}/Contrasttemp.txt
-    rm ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2vol_${Contrast}${TemporalFilterString}${SmoothingString}.dtseries.nii
-    VolMergeSTRING=`echo "${VolMergeSTRING}-cifti ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2vol_${Contrast}${TemporalFilterString}${SmoothingString}.dscalar.nii "`
-  fi
-  rm ${LevelTwoFEATDir}/Contrasttemp.txt
-  i=$(($i+1))
 done
-${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2${TemporalFilterString}${SmoothingString}${RegString}${ParcellationString}.${ScalarExtension} ${zMergeSTRING}
-${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2_beta${TemporalFilterString}${SmoothingString}${RegString}${ParcellationString}.${ScalarExtension} ${bMergeSTRING}
-if [ ${VolumeBasedProcessing} = "YES" ] ; then
-  ${CARET7DIR}/wb_command -cifti-merge ${LevelTwoFEATDir}/${Subject}_${LevelTwofsfName}_level2vol${TemporalFilterString}${SmoothingString}.dscalar.nii ${VolMergeSTRING}  
-fi
-
-

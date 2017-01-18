@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 set -e
 g_script_name=`basename ${0}`
 
@@ -6,7 +6,7 @@ source ${HCPPIPEDIR}/global/scripts/log.shlib # Logging related functions
 log_SetToolName "${g_script_name}"
 
 # Requirements for this script
-#  installed versions of: FSL5.0.7 or higher , FreeSurfer (version 5 or higher) , gradunwarp (python code from MGH) 
+#  installed versions of: FSL5.0.7 or higher , FreeSurfer (version 5 or higher) , gradunwarp (python code from MGH)
 #  environment: use SetUpHCPPipeline.sh  (or individually set FSLDIR, FREESURFER_HOME, HCPPIPEDIR, PATH - for gradient_unwarp.py)
 
 # make pipeline engine happy...
@@ -16,11 +16,11 @@ then
     exit 0
 fi
 
-########################################## PIPELINE OVERVIEW ########################################## 
+########################################## PIPELINE OVERVIEW ##########################################
 
 # TODO
 
-########################################## OUTPUT DIRECTORIES ########################################## 
+########################################## OUTPUT DIRECTORIES ##########################################
 
 # TODO
 
@@ -48,10 +48,10 @@ defaultopt() {
 if [ $# -eq 0 ] ; then Usage; exit 0; fi
 
 # parse arguments
-Path=`getopt1 "--path" $@`  
+Path=`getopt1 "--path" $@`
 log_Msg "Path: ${Path}"
 
-Subject=`getopt1 "--subject" $@`  
+Subject=`getopt1 "--subject" $@`
 log_Msg "Subject: ${Subject}"
 
 LevelOnefMRINames=`getopt1 "--lvl1tasks" $@`
@@ -64,15 +64,15 @@ LevelTwofMRIName=`getopt1 "--lvl2task" $@`
 log_Msg "LevelTwofMRIName: ${LevelTwofMRIName}"
 
 LevelTwofsfNames=`getopt1 "--lvl2fsf" $@`
-log_Msg "LevelTwofsfNames: ${LevelTwofsfNames}" 
+log_Msg "LevelTwofsfNames: ${LevelTwofsfNames}"
 
-LowResMesh=`getopt1 "--lowresmesh" $@`  
+LowResMesh=`getopt1 "--lowresmesh" $@`
 log_Msg "LowResMesh: ${LowResMesh}"
 
-GrayordinatesResolution=`getopt1 "--grayordinatesres" $@` 
+GrayordinatesResolution=`getopt1 "--grayordinatesres" $@`
 log_Msg "GrayordinatesResolution: ${GrayordinatesResolution}"
 
-OriginalSmoothingFWHM=`getopt1 "--origsmoothingFWHM" $@`  
+OriginalSmoothingFWHM=`getopt1 "--origsmoothingFWHM" $@`
 log_Msg "OriginalSmoothingFWHM: ${OriginalSmoothingFWHM}"
 
 Confound=`getopt1 "--confound" $@`
@@ -94,7 +94,7 @@ Parcellation=`getopt1 "--parcellation" $@`
 log_Msg "Parcellation: ${Parcellation}"
 
 ParcellationFile=`getopt1 "--parcellationfile" $@`
-log_Msg "ParcellationFile: ${ParcellationFile}" 
+log_Msg "ParcellationFile: ${ParcellationFile}"
 
 # Setup PATHS
 PipelineScripts=${HCPPIPEDIR_tfMRIAnalysis}
@@ -115,9 +115,9 @@ log_Msg "Run Level One Analysis for Both Phase Encoding Directions"
 
 i=1
 for LevelOnefMRIName in $LevelOnefMRINames ; do
-  log_Msg "LevelOnefMRIName: ${LevelOnefMRIName}"	
+  log_Msg "LevelOnefMRIName: ${LevelOnefMRIName}"
   LevelOnefsfName=`echo $LevelOnefsfNames | cut -d " " -f $i`
-  ${PipelineScripts}/TaskfMRILevel1.v2.0.sh $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ParcellationFile 
+  ${PipelineScripts}/TaskfMRILevel1.v2.0.sh $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ParcellationFile
   echo "set -- $Subject $ResultsFolder $ROIsFolder $DownSampleFolder $LevelOnefMRIName $LevelOnefsfName $LowResMesh $GrayordinatesResolution $OriginalSmoothingFWHM $Confound $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation $ParcellationFile"
   i=$(($i+1))
 done
@@ -129,6 +129,3 @@ LevelOnefsfNames=`echo $LevelOnefMRINames | sed 's/ /@/g'`
 log_Msg "Combine Data Across Phase Encoding Directions in the Level Two Analysis"
 ${PipelineScripts}/TaskfMRILevel2.v2.0.sh $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfNames $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation
 echo "set -- $Subject $ResultsFolder $DownSampleFolder $LevelOnefMRINames $LevelOnefsfNames $LevelTwofMRIName $LevelTwofsfNames $LowResMesh $FinalSmoothingFWHM $TemporalFilter $VolumeBasedProcessing $RegName $Parcellation"
-
-
-

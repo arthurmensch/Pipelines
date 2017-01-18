@@ -1,11 +1,11 @@
-#!/bin/bash 
+#!/bin/bash
 
 echo "This script must be SOURCED to correctly setup the environment prior to running any of the other HCP scripts contained here"
 
 # Set up FSL (if not already done so in the running environment)
 # Uncomment the following 2 lines (remove the leading #) and correct the FSLDIR setting for your setup
-#export FSLDIR=/usr/share/fsl/5.0
-#. ${FSLDIR}/etc/fslconf/fsl.sh
+export FSLDIR=/usr/lib/fsl/5.0
+. /etc/fsl/5.0/fsl.sh
 
 # Let FreeSurfer know what version of FSL to use
 # FreeSurfer uses FSL_DIR instead of FSLDIR to determine the FSL version
@@ -17,11 +17,8 @@ export FSL_DIR="${FSLDIR}"
 #source ${FREESURFER_HOME}/SetUpFreeSurfer.sh > /dev/null 2>&1
 
 # Set up specific environment variables for the HCP Pipeline
-export HCPPIPEDIR=/media/myelin/brainmappers/Connectome_Project/Pipelines
-export CARET7DIR=/home/brainmappers/workbench
+export HCPPIPEDIR=${HOME}/work/repos/Pipelines
 export MSMBin=${HCPPIPEDIR}/MSMBinaries
-export MATLAB_COMPILER_RUNTIME=/media/myelin/brainmappers/HardDrives/1TB/MATLAB_Runtime/v901
-export FSL_FIXDIR=/media/myelin/aahana/fix1.06
 
 export HCPPIPEDIR_Templates=${HCPPIPEDIR}/global/templates
 export HCPPIPEDIR_Bin=${HCPPIPEDIR}/global/binaries
@@ -37,4 +34,3 @@ export HCPPIPEDIR_dMRI=${HCPPIPEDIR}/DiffusionPreprocessing/scripts
 export HCPPIPEDIR_dMRITract=${HCPPIPEDIR}/DiffusionTractography/scripts
 export HCPPIPEDIR_Global=${HCPPIPEDIR}/global/scripts
 export HCPPIPEDIR_tfMRIAnalysis=${HCPPIPEDIR}/TaskfMRIAnalysis/scripts
-

@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 get_batch_options() {
     local arguments=("$@")
@@ -39,9 +39,9 @@ get_batch_options() {
 
 get_batch_options "$@"
 
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
+StudyFolder="/storage/data/HCP_test" #Location of Subject folders (named by subjectID)
 Subjlist="100307" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="${HOME}/work/repos/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -53,7 +53,7 @@ fi
 
 # Requirements for this script
 #  installed versions of: FSL (version 5.0.6)
-#  environment: FSLDIR , HCPPIPEDIR , CARET7DIR 
+#  environment: FSLDIR , HCPPIPEDIR , CARET7DIR
 
 #Set up pipeline environment variables and software
 source ${EnvironmentScript}
@@ -69,7 +69,7 @@ fi
 PRINTCOM=""
 #PRINTCOM="echo"
 
-########################################## INPUTS ########################################## 
+########################################## INPUTS ##########################################
 
 #Scripts called by this script do assume they run on the results of the HCP minimal preprocesing pipelines from Q2
 
@@ -97,7 +97,7 @@ do
 	OriginalSmoothingFWHM="2" #2mm if using HCP minimal preprocessing pipeline outputes
 	Confound="NONE" #File located in ${SubjectID}/MNINonLinear/Results/${fMRIName} or NONE
 	TemporalFilter="200" #Use 2000 for linear detrend, 200 is default for HCP task fMRI
-	VolumeBasedProcessing="NO" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).  
+	VolumeBasedProcessing="YES" #YES or NO. CAUTION: Only use YES if you want unconstrained volumetric blurring of your data, otherwise set to NO for faster, less biased, and more senstive processing (grayordinates results do not use unconstrained volumetric blurring and are always produced).
 	RegNames="NONE" # Use NONE to use the default surface registration
 	ParcellationList="NONE" # Use NONE to perform dense analysis, non-greyordinates parcellations are not supported because they are not valid for cerebral cortex.  Parcellation superseeds smoothing (i.e. smoothing is done)
 	ParcellationFileList="NONE" # Absolute path the parcellation dlabel file
@@ -121,7 +121,7 @@ do
 
 					for Subject in $Subjlist ; do
 						echo "    ${Subject}"
-						
+
 						if [ -n "${command_line_specified_run_local}" ] ; then
 						    echo "About to run ${HCPPIPEDIR}/TaskfMRIAnalysis/TaskfMRIAnalysis.sh"
 						    queuing_command=""
@@ -147,13 +147,13 @@ do
 						    --regname=$RegName \
 						    --parcellation=$Parcellation \
 						    --parcellationfile=$ParcellationFile
-						
+
 					done
 
 					i=$(($i+1))
 
 				done
-				
+
 			done
 
 			j=$(( ${j}+1 ))

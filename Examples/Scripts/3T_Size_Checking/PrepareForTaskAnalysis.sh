@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 SubjectList="100307"
 
@@ -15,14 +15,14 @@ DirectionList=""
 DirectionList="${DirectionList} RL"
 DirectionList="${DirectionList} LR"
 
-StudyFolder="${HOME}/data/3T_Size_Checking"
+StudyFolder="/storage/data/HCP_test"
 
 for subject in ${SubjectList}
 do
-	
-	for task in ${TaskNameList} 
+
+	for task in ${TaskNameList}
 	do
-		
+
 		for direction in ${DirectionList}
 		do
 
